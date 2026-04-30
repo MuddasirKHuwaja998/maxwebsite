@@ -1197,7 +1197,7 @@ section{ padding: 7rem 0; }
 .test-form input[type="email"],
 .test-form input[type="tel"]{
   font-family: var(--sans);
-  font-size: 1rem;
+  font-size: 16px; /* prevent iOS auto-zoom on focus */
   font-weight: 400;
   color: var(--dark);
   background: #fafaf8;
@@ -1206,6 +1206,8 @@ section{ padding: 7rem 0; }
   padding: .85rem 1rem;
   transition: border-color .3s var(--ease), background .3s var(--ease), box-shadow .3s var(--ease);
   width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
 }
 .test-form input::placeholder{ color: #a8acb2; font-weight: 300; }
 .test-form input:focus{
@@ -1266,9 +1268,82 @@ section{ padding: 7rem 0; }
   background: #c9c9cd; color: #fff; cursor: not-allowed;
   transform: none; box-shadow: none;
 }
-@media (max-width: 560px){
-  .test-form{ grid-template-columns: 1fr; gap: .9rem; }
-  .test-modal-card{ padding: 2rem 1.4rem 1.6rem; border-radius: 14px; }
+/* ============================================================
+   AUDIO TEST MODAL — phone webapp polish
+   ============================================================ */
+@media (max-width: 760px){
+  .test-modal{ padding: 0; align-items: stretch; justify-content: stretch; }
+  .test-modal-card{
+    width: 100%; max-width: none;
+    max-height: 100dvh; height: 100dvh;
+    border-radius: 0; border: none;
+    box-shadow: none;
+    padding: 0;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    transform: translateY(28px);
+    transition: transform .5s var(--ease-out);
+  }
+  .test-modal.open .test-modal-card{ transform: translateY(0); }
+  /* Sticky header bar */
+  .test-modal-card::before{
+    content: ''; position: sticky; top: 0; z-index: 5;
+    display: block; height: 4px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    flex-shrink: 0;
+  }
+  .test-modal-close{
+    position: fixed; top: env(safe-area-inset-top, .6rem); right: .8rem;
+    z-index: 6;
+    width: 42px; height: 42px;
+    background: rgba(255,255,255,.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 4px 14px rgba(43,48,54,.18);
+    font-size: 1.3rem;
+  }
+  .test-modal-close:hover{ transform: none; }
+  /* Scrollable inner content */
+  .test-modal-card > .modal-eyebrow,
+  .test-modal-card > h3,
+  .test-modal-card > .modal-sub{
+    padding-left: 1.4rem; padding-right: 1.4rem;
+  }
+  .test-modal-card > .modal-eyebrow{ margin-top: 1.3rem; margin-bottom: .6rem; }
+  .test-modal-card > h3{ font-size: 1.55rem; padding-right: 3.5rem; margin-bottom: .35rem; }
+  .test-modal-card > .modal-sub{ font-size: .92rem; margin-bottom: 1.4rem; }
+  .test-form{
+    grid-template-columns: 1fr;
+    gap: .9rem;
+    padding: 0 1.4rem 1.2rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    flex: 1;
+  }
+  .test-form .field input[type="text"],
+  .test-form .field input[type="email"],
+  .test-form .field input[type="tel"]{
+    padding: .95rem 1rem;
+    font-size: 16px;
+    border-radius: 12px;
+  }
+  .test-form label{ font-size: .72rem; }
+  .test-form .accept{ padding: .35rem 0; }
+  /* Sticky submit bar at the bottom */
+  .test-form .submit-btn{
+    position: sticky; bottom: 0;
+    margin: .8rem -1.4rem 0;
+    padding: 1.05rem 1.6rem calc(1.05rem + env(safe-area-inset-bottom, 0px));
+    border-radius: 0;
+    box-shadow: 0 -10px 22px rgba(43,48,54,.08);
+    font-size: 1.06rem;
+  }
+}
+
+@media (max-width: 380px){
+  .test-modal-card > h3{ font-size: 1.35rem; }
+  .test-form{ gap: .75rem; padding: 0 1.1rem 1rem; }
+  .test-form .submit-btn{ margin: .6rem -1.1rem 0; }
 }
 
 </style>
@@ -1834,6 +1909,95 @@ section{ padding: 7rem 0; }
   }
   if(waves.length){ requestAnimationFrame(animateWaves); }
 
+})();
+</script>
+
+<!-- ============================================================
+     AUDIO TEST FORM MODAL
+     ============================================================ -->
+<div class="test-modal" id="testModal" role="dialog" aria-modal="true" aria-labelledby="testModalTitle" data-testid="test-modal">
+  <div class="test-modal-card">
+    <button class="test-modal-close" type="button" aria-label="Chiudi" onclick="closeTestForm()">✕</button>
+    <div class="modal-eyebrow">Test Uditivo Gratuito</div>
+    <h3 id="testModalTitle">Inserisci i tuoi <em>dati</em> per iniziare.</h3>
+    <p class="modal-sub">Completa il modulo qui sotto per accedere al test dell'udito online. Solo pochi secondi.</p>
+
+    <form class="test-form" id="testForm" novalidate>
+      <div class="field">
+        <label for="tf-nome">Nome</label>
+        <input type="text" id="tf-nome" name="nome" placeholder="Nome" autocomplete="given-name" autocapitalize="words" required>
+      </div>
+      <div class="field">
+        <label for="tf-cognome">Cognome</label>
+        <input type="text" id="tf-cognome" name="cognome" placeholder="Cognome" autocomplete="family-name" autocapitalize="words" required>
+      </div>
+      <div class="field">
+        <label for="tf-email">Email</label>
+        <input type="email" id="tf-email" name="email" placeholder="Email" autocomplete="email" inputmode="email" required>
+      </div>
+      <div class="field">
+        <label for="tf-tel">Numero di Telefono</label>
+        <input type="tel" id="tf-tel" name="telefono" placeholder="Numero di Telefono" autocomplete="tel" inputmode="tel" required>
+      </div>
+      <div class="field">
+        <label for="tf-citta">Città</label>
+        <input type="text" id="tf-citta" name="citta" placeholder="Inserisci città" autocomplete="address-level2" autocapitalize="words" required>
+      </div>
+      <div class="field">
+        <label for="tf-indirizzo">Indirizzo di residenza</label>
+        <input type="text" id="tf-indirizzo" name="indirizzo" placeholder="Inserisci indirizzo" autocomplete="street-address" required>
+      </div>
+      <label class="accept full">
+        <input type="checkbox" id="tf-accept" name="accept" required>
+        <span>Accetto termini e condizioni per poter effettuare il test dell'udito online.</span>
+      </label>
+      <button type="submit" class="submit-btn">Comincia il tuo Audio Test! <span aria-hidden="true">→</span></button>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  var modal = document.getElementById('testModal');
+  var form  = document.getElementById('testForm');
+  var SCREENER_URL = 'https://hearing-screener.beyondhearing.org/ClinicaAudiologicaMAXO/Gtbsbr/welcome';
+  if(!modal || !form) return;
+
+  window.openTestForm = function(){
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    setTimeout(function(){
+      var f = document.getElementById('tf-nome');
+      if(f && window.matchMedia('(min-width: 561px)').matches) f.focus();
+    }, 350);
+  };
+  window.closeTestForm = function(){
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+  };
+
+  // Backdrop click closes
+  modal.addEventListener('click', function(e){
+    if(e.target === modal) window.closeTestForm();
+  });
+  // Escape closes
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && modal.classList.contains('open')) window.closeTestForm();
+  });
+
+  // Submit -> validate -> redirect
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if(!form.checkValidity()){ form.reportValidity(); return; }
+    var btn = form.querySelector('.submit-btn');
+    if(btn){ btn.disabled = true; btn.textContent = 'Reindirizzamento…'; }
+    window.open(SCREENER_URL, '_blank', 'noopener,noreferrer');
+    setTimeout(function(){
+      window.closeTestForm();
+      if(btn){ btn.disabled = false; btn.innerHTML = 'Comincia il tuo Audio Test! <span aria-hidden="true">→</span>'; }
+      form.reset();
+    }, 700);
+  });
 })();
 </script>
 
